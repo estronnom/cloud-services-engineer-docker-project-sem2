@@ -9,6 +9,9 @@ RUN --mount=type=cache,target=/root/.npm \
 
 COPY . .
 
+ARG VUE_APP_API_URL=http://localhost:8080
+ENV VUE_APP_API_URL=${VUE_APP_API_URL}
+
 RUN NODE_OPTIONS=--openssl-legacy-provider \
     npm run build && rm -rf ./node_modules
 
