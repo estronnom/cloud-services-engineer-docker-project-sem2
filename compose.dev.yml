@@ -1,0 +1,8 @@
+name: momo-proj
+
+# example of dev compose configuration, exposes internal backend port along with load-balancer port
+# use `docker compose -f compose.yml -f compose.dev.yml up` to combine two compose files
+services:
+  backend:
+    ports:
+      - 0.0.0.0:${INTERNAL_BACKEND_PORT:-8085}:8081
