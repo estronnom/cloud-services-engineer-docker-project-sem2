@@ -6,9 +6,15 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: momo-backend
     volumes:
       - backend_logs:/app/logs
+    secrets:
+      - api-keys
+    environment:
+      - API_KEYS_FILE=/run/secrets/api-keys
+    env_file:
+      - .env.common
+      - .env.be
     networks:
       - backend_net
     restart: unless-stopped
@@ -32,12 +38,14 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: momo-frontend
     depends_on:
       nginx:
         condition: service_healthy
+    env_file:
+      - .env.common
+      - .env.fe
     ports:
-      - '0.0.0.0:80:8080'
+      - '0.0.0.0:${FRONTEND_PORT:-80}:8080'
     networks:
       - frontend_net
     restart: unless-stopped
@@ -60,16 +68,17 @@ services:
       - /var/cache/nginx:size=32M,mode=1777,noexec,nosuid,nodev
       - /tmp:size=32M,mode=1777,noexec,nosuid,nodev
 
-  nginx:
+  backend-lb:
     image: nginxinc/nginx-unprivileged:1.31-alpine3.24
-    container_name: momo-nginx
     depends_on:
       backend:
         condition: service_healthy
     volumes:
       - ./backend-lb.conf:/etc/nginx/conf.d/default.conf:ro
+    env_file:
+      - .env.common
     ports:
-      - '0.0.0.0:8080:8080'
+      - '0.0.0.0:${FRONTEND_PORT:-8080}:8080'
     networks:
       - frontend_net
       - backend_net
@@ -102,6 +111,6 @@ networks:
 volumes:
   backend_logs:
 
-# secrets:
-#   api_secret:
-#     file: ./secrets/api_secret.txt
+secrets:
+  api-keys:
+    file: ./secrets/api-keys.json

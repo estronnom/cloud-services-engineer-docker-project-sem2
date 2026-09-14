@@ -17,3 +17,8 @@ vendor/
 .vscode/
 .DS_Store
 *.tgz
+
+.env.be
+.env.fe
+.env.common
+secrets/api-keys.json
