@@ -50,10 +50,11 @@ jobs:
             cp .env.fe.example .env.fe
             cp .env.common.example .env.common
       - name: Prepare secrets
+        env:
+          API_KEY: ${{ secrets.API_KEY }}
         run: |
-            mkdir -p secrets
-            printf '%s' "$API_KEY" >
-            secrets/api-keys.json
+          mkdir -p secrets
+          printf '%s' "$API_KEY" > secrets/api-keys.json
 
       - name: Build via Docker Compose
         uses: hoverkraft-tech/compose-action@v2.2.0
@@ -82,7 +83,7 @@ jobs:
           tags: momo-store-fe:local
 
       - name: Trivy - Scan backend
-        uses: aquasecurity/trivy-action@0.36.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: momo-store-be:local
           format: table
@@ -91,7 +92,7 @@ jobs:
           ignore-unfixed: true # ignore cves with no fix available
 
       - name: Trivy - Scan frontend
-        uses: aquasecurity/trivy-action@0.36.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: momo-store-fe:local
           format: table
