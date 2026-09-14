@@ -1,0 +1,107 @@
+name: momo-proj
+
+services:
+  backend:
+    image: momo-backend:${TAG:-latest}
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: momo-backend
+    volumes:
+      - backend_logs:/app/logs
+    networks:
+      - backend_net
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-fsS", "http://127.0.0.1:8081/health" ]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      start_interval: 3s
+      retries: 3
+    cap_drop:
+      - ALL
+    cpus: "0.50"
+    hostname: backend
+    mem_limit: 256M
+    security_opt:
+      - no-new-privileges:true
+
+  frontend:
+    image: momo-frontend:${TAG:-latest}
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: momo-frontend
+    depends_on:
+      nginx:
+        condition: service_healthy
+    ports:
+      - '0.0.0.0:80:8080'
+    networks:
+      - frontend_net
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-fsS", "http://127.0.0.1:8080/health" ]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      start_interval: 3s
+      retries: 3
+    cap_add:
+      - NET_BIND_SERVICE
+    cap_drop:
+      - ALL
+    cpus: "0.50"
+    mem_limit: 128M
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /var/cache/nginx:size=32M,mode=1777,noexec,nosuid,nodev
+      - /tmp:size=32M,mode=1777,noexec,nosuid,nodev
+
+  nginx:
+    image: nginxinc/nginx-unprivileged:1.31-alpine3.24
+    container_name: momo-nginx
+    depends_on:
+      backend:
+        condition: service_healthy
+    volumes:
+      - ./backend-lb.conf:/etc/nginx/conf.d/default.conf:ro
+    ports:
+      - '0.0.0.0:8080:8080'
+    networks:
+      - frontend_net
+      - backend_net
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-fsS", "http://127.0.0.1:8080/health" ]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      start_interval: 3s
+      retries: 3
+    cap_drop:
+      - ALL
+    cpus: "0.25"
+    expose:
+      - '80'
+    mem_limit: 128M
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /var/cache/nginx:size=32M,mode=1777,noexec,nosuid,nodev
+      - /tmp:size=32M,mode=1777,noexec,nosuid,nodev
+
+networks:
+  frontend_net:
+    driver: bridge
+  backend_net:
+    driver: bridge
+
+volumes:
+  backend_logs:
+
+# secrets:
+#   api_secret:
+#     file: ./secrets/api_secret.txt
