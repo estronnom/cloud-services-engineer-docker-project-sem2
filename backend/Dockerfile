@@ -28,7 +28,8 @@ LABEL version="$VERSION"
 
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
-RUN apk add --no-cache curl && \
+RUN apk upgrade --no-cache && \
+    apk add --no-cache curl && \
     mkdir -p /app/config /app/data /app/logs /app/tmp && \
     chown -R appuser:appgroup /app
 
